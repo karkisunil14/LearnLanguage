@@ -19,7 +19,7 @@ export default function Onboarding() {
         </View>
 
         <View className="mt-10">
-          <Text className="font-poppins-bold text-[2.5rem] leading-[1.15] text-text-primary">
+          <Text className="font-poppins-bold text-[2.125rem] leading-[1.2] text-text-primary">
             Your AI language{"\n"}
             <Text className="text-brand-purple">teacher.</Text>
           </Text>
