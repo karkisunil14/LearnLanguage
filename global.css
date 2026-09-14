@@ -29,6 +29,14 @@
   --color-surface: #f6f7fb;
   --color-background: #ffffff;
 
+  /* Onboarding chat bubbles */
+  --color-chat-blue-bg: #e8f0fe;
+  --color-chat-blue-text: #0d132b;
+  --color-chat-purple-bg: #ece9fd;
+  --color-chat-purple-text: #6c4ef5;
+  --color-chat-peach-bg: #fdece3;
+  --color-chat-peach-text: #e8543e;
+
   /* Font families - loaded via @expo-google-fonts/poppins, see src/app/_layout.tsx */
   --font-poppins-regular: "Poppins_400Regular";
   --font-poppins-medium: "Poppins_500Medium";
@@ -80,4 +88,23 @@
 }
 @utility caption {
   @apply font-poppins-regular text-caption text-text-secondary;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Chat bubble utilities (onboarding screen)                              */
+/* ---------------------------------------------------------------------- */
+@utility chat-bubble {
+  @apply rounded-2xl px-4 py-2 shadow-sm;
+}
+@utility chat-bubble__text {
+  @apply font-poppins-medium text-body-md;
+}
+@utility chat-bubble--blue {
+  @apply bg-chat-blue-bg;
+}
+@utility chat-bubble--purple {
+  @apply bg-chat-purple-bg;
+}
+@utility chat-bubble--peach {
+  @apply bg-chat-peach-bg;
 }
