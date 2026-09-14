@@ -1,5 +1,5 @@
-import { Stack } from "expo-router";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { router, Stack } from "expo-router";
+import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { images } from "@/constants/images";
@@ -8,7 +8,7 @@ export default function Onboarding() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
       <Stack.Screen options={{ headerShown: false }} />
-      <View className="flex-1 px-6 pb-4">
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6 pb-4">
         <View className="flex-row items-center justify-center gap-2 pt-2">
           <Image
             source={images.mascotLogo}
@@ -52,12 +52,13 @@ export default function Onboarding() {
 
         <TouchableOpacity
           activeOpacity={0.85}
+          onPress={() => router.push("/sign-up")}
           className="flex-row items-center justify-center gap-2 rounded-full bg-brand-deep-purple py-4 shadow-lg"
         >
           <Text className="font-poppins-semibold text-body-lg text-white">Get Started</Text>
           <Text className="font-poppins-bold text-body-lg text-white">›</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
