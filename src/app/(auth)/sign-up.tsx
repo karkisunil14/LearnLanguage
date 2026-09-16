@@ -1,3 +1,4 @@
+import { useClerk, useSignUp } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, router, Stack } from "expo-router";
 import { useState } from "react";
@@ -13,14 +14,90 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AuthTextField } from "@/components/AuthTextField";
-import { SocialAuthButton } from "@/components/SocialAuthButton";
 import { VerificationModal } from "@/components/VerificationModal";
 import { images } from "@/constants/images";
+import { getClerkErrorMessage, navigateAfterAuth, withSessionRecovery, withTimeout } from "@/lib/clerk";
+
+const REQUEST_TIMEOUT_MS = 15000;
+const TIMEOUT_MESSAGE =
+  "That's taking too long. Check your connection - or the bot protection challenge - and try again.";
 
 export default function SignUp() {
+  const { signUp, errors } = useSignUp();
+  const { signOut } = useClerk();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const handleSignUp = async () => {
+    setFormError(null);
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await withSessionRecovery(
+        () => withTimeout(signUp.password({ emailAddress: email, password }), REQUEST_TIMEOUT_MS, TIMEOUT_MESSAGE),
+        signOut,
+      );
+      if (error) {
+        setFormError(getClerkErrorMessage(error, "Couldn't create your account. Please try again."));
+        return;
+      }
+
+      const { error: codeError } = await withTimeout(
+        signUp.verifications.sendEmailCode(),
+        REQUEST_TIMEOUT_MS,
+        TIMEOUT_MESSAGE,
+      );
+      if (codeError) {
+        setFormError(getClerkErrorMessage(codeError, "Couldn't send a verification code. Please try again."));
+        return;
+      }
+
+      setIsVerifying(true);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleVerify = async (code: string) => {
+    try {
+      const { error } = await withTimeout(
+        signUp.verifications.verifyEmailCode({ code }),
+        REQUEST_TIMEOUT_MS,
+        TIMEOUT_MESSAGE,
+      );
+      if (error) return getClerkErrorMessage(error, "That code didn't work. Please try again.");
+
+      if (signUp.status === "complete") {
+        // Close the sheet ourselves before navigating away - leaving it marked
+        // visible while the screen underneath unmounts can crash the native Modal.
+        setIsVerifying(false);
+        await signUp.finalize({ navigate: navigateAfterAuth });
+        return null;
+      }
+
+      return "Something went wrong. Please try again.";
+    } catch (err) {
+      return err instanceof Error ? err.message : "Something went wrong. Please try again.";
+    }
+  };
+
+  const handleResend = async () => {
+    try {
+      const { error } = await withTimeout(
+        signUp.verifications.sendEmailCode(),
+        REQUEST_TIMEOUT_MS,
+        TIMEOUT_MESSAGE,
+      );
+      return error ? getClerkErrorMessage(error, "Couldn't resend the code. Please try again.") : null;
+    } catch (err) {
+      return err instanceof Error ? err.message : "Something went wrong. Please try again.";
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
@@ -61,6 +138,11 @@ export default function SignUp() {
               onChangeText={setEmail}
               keyboardType="email-address"
             />
+            {errors.fields.emailAddress && (
+              <Text className="font-poppins-regular text-body-sm text-error">
+                {errors.fields.emailAddress.message}
+              </Text>
+            )}
             <AuthTextField
               label="Password"
               placeholder="••••••••"
@@ -68,38 +150,31 @@ export default function SignUp() {
               onChangeText={setPassword}
               isPassword
             />
+            {errors.fields.password && (
+              <Text className="font-poppins-regular text-body-sm text-error">
+                {errors.fields.password.message}
+              </Text>
+            )}
           </View>
+
+          <View nativeID="clerk-captcha" />
+
+          {formError && (
+            <Text className="mt-4 text-center font-poppins-medium text-body-sm text-error">
+              {formError}
+            </Text>
+          )}
 
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() => setIsVerifying(true)}
+            onPress={handleSignUp}
+            disabled={isSubmitting}
             className="mt-6 items-center justify-center rounded-full bg-brand-deep-purple py-4 shadow-lg"
           >
-            <Text className="font-poppins-semibold text-body-lg text-white">Sign Up</Text>
-          </TouchableOpacity>
-
-          <View className="mt-6 flex-row items-center gap-3">
-            <View className="h-px flex-1 bg-border" />
-            <Text className="font-poppins-regular text-body-sm text-text-secondary">
-              or continue with
+            <Text className="font-poppins-semibold text-body-lg text-white">
+              {isSubmitting ? "Creating account..." : "Sign Up"}
             </Text>
-            <View className="h-px flex-1 bg-border" />
-          </View>
-
-          <View className="mt-6 gap-3">
-            <SocialAuthButton
-              label="Continue with Google"
-              icon={<Ionicons name="logo-google" size={20} color="#4285F4" />}
-            />
-            <SocialAuthButton
-              label="Continue with Facebook"
-              icon={<Ionicons name="logo-facebook" size={20} color="#1877F2" />}
-            />
-            <SocialAuthButton
-              label="Continue with Apple"
-              icon={<Ionicons name="logo-apple" size={20} color="#000000" />}
-            />
-          </View>
+          </TouchableOpacity>
 
           <View style={{ flex: 1 }} />
 
@@ -118,6 +193,8 @@ export default function SignUp() {
         visible={isVerifying}
         email={email || "your email"}
         onClose={() => setIsVerifying(false)}
+        onVerify={handleVerify}
+        onResend={handleResend}
       />
     </SafeAreaView>
   );

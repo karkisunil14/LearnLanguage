@@ -1,3 +1,4 @@
+import { useClerk, useSignIn } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, router, Stack } from "expo-router";
 import { useState } from "react";
@@ -13,13 +14,50 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AuthTextField } from "@/components/AuthTextField";
-import { SocialAuthButton } from "@/components/SocialAuthButton";
-import { VerificationModal } from "@/components/VerificationModal";
 import { images } from "@/constants/images";
+import { getClerkErrorMessage, navigateAfterAuth, withSessionRecovery, withTimeout } from "@/lib/clerk";
+
+const REQUEST_TIMEOUT_MS = 15000;
+const TIMEOUT_MESSAGE = "That's taking too long. Check your connection and try again.";
 
 export default function SignIn() {
+  const { signIn, errors } = useSignIn();
+  const { signOut } = useClerk();
   const [email, setEmail] = useState("");
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const handleSignIn = async () => {
+    setFormError(null);
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await withSessionRecovery(
+        () =>
+          withTimeout(
+            signIn.password({ emailAddress: email, password }),
+            REQUEST_TIMEOUT_MS,
+            TIMEOUT_MESSAGE,
+          ),
+        signOut,
+      );
+      if (error) {
+        setFormError(getClerkErrorMessage(error, "Couldn't sign in. Please check your email and password."));
+        return;
+      }
+
+      if (signIn.status === "complete") {
+        await signIn.finalize({ navigate: navigateAfterAuth });
+      } else {
+        setFormError("Something went wrong. Please try again.");
+      }
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
@@ -60,38 +98,41 @@ export default function SignIn() {
               onChangeText={setEmail}
               keyboardType="email-address"
             />
+            {errors.fields.identifier && (
+              <Text className="font-poppins-regular text-body-sm text-error">
+                {errors.fields.identifier.message}
+              </Text>
+            )}
+            <AuthTextField
+              label="Password"
+              placeholder="••••••••"
+              value={password}
+              onChangeText={setPassword}
+              isPassword
+            />
+            {errors.fields.password && (
+              <Text className="font-poppins-regular text-body-sm text-error">
+                {errors.fields.password.message}
+              </Text>
+            )}
           </View>
+
+          {formError && (
+            <Text className="mt-4 text-center font-poppins-medium text-body-sm text-error">
+              {formError}
+            </Text>
+          )}
 
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() => setIsVerifying(true)}
+            onPress={handleSignIn}
+            disabled={isSubmitting}
             className="mt-6 items-center justify-center rounded-full bg-brand-deep-purple py-4 shadow-lg"
           >
-            <Text className="font-poppins-semibold text-body-lg text-white">Sign In</Text>
-          </TouchableOpacity>
-
-          <View className="mt-6 flex-row items-center gap-3">
-            <View className="h-px flex-1 bg-border" />
-            <Text className="font-poppins-regular text-body-sm text-text-secondary">
-              or continue with
+            <Text className="font-poppins-semibold text-body-lg text-white">
+              {isSubmitting ? "Signing in..." : "Sign In"}
             </Text>
-            <View className="h-px flex-1 bg-border" />
-          </View>
-
-          <View className="mt-6 gap-3">
-            <SocialAuthButton
-              label="Continue with Google"
-              icon={<Ionicons name="logo-google" size={20} color="#4285F4" />}
-            />
-            <SocialAuthButton
-              label="Continue with Facebook"
-              icon={<Ionicons name="logo-facebook" size={20} color="#1877F2" />}
-            />
-            <SocialAuthButton
-              label="Continue with Apple"
-              icon={<Ionicons name="logo-apple" size={20} color="#000000" />}
-            />
-          </View>
+          </TouchableOpacity>
 
           <View style={{ flex: 1 }} />
 
@@ -105,12 +146,6 @@ export default function SignIn() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <VerificationModal
-        visible={isVerifying}
-        email={email || "your email"}
-        onClose={() => setIsVerifying(false)}
-      />
     </SafeAreaView>
   );
 }

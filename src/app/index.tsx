@@ -1,13 +1,28 @@
-import { Link } from "expo-router";
-import { Text, View } from "react-native";
+import { useAuth, useClerk } from "@clerk/expo";
+import { Redirect } from "expo-router";
+import { Text, TouchableOpacity, View } from "react-native";
 
 export default function Index() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const { signOut } = useClerk();
+
+  if (!isLoaded) return null;
+  if (!isSignedIn) return <Redirect href="/onboarding" />;
+
   return (
-    <View className="flex-1 items-center justify-center gap-4 bg-white">
-      <Text className="h3 text-brand-purple">Language app!!</Text>
-      <Link href="/onboarding" className="body-lg text-brand-purple underline">
-        Open onboarding is here
-      </Link>
+    <View className="flex-1 items-center justify-center gap-6 bg-surface">
+      <Text className="font-poppins-bold text-h2 text-brand-purple">
+        Lingua
+      </Text>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => signOut()}
+        className="items-center justify-center rounded-full bg-brand-deep-purple px-8 py-4 shadow-lg"
+      >
+        <Text className="font-poppins-semibold text-body-lg text-white">
+          Sign Out
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
