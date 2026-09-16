@@ -13,13 +13,23 @@ set -euo pipefail
 
 # Walk up from $PWD to find .env/.env.local (mirrors Clerk CLI behavior).
 # Stops at the first directory that provides CLERK_SECRET_KEY.
+# Parsed as plain KEY=VALUE data, never `source`d, so a crafted .env file
+# cannot execute arbitrary shell code.
 _dir="$PWD"
 while true; do
   for _envfile in "$_dir/.env" "$_dir/.env.local"; do
     if [[ -f "$_envfile" ]]; then
-      set -a
-      source "$_envfile"
-      set +a
+      for _var in CLERK_SECRET_KEY CLERK_BAPI_SCOPES CLERK_REST_API_URL; do
+        if [[ -z "${!_var:-}" ]]; then
+          _line=$(grep -E "^${_var}=" "$_envfile" | tail -n 1 || true)
+          if [[ -n "$_line" ]]; then
+            _value="${_line#*=}"
+            _value="${_value%\"}"; _value="${_value#\"}"
+            _value="${_value%\'}"; _value="${_value#\'}"
+            export "$_var=$_value"
+          fi
+        fi
+      done
     fi
   done
   [[ -n "${CLERK_SECRET_KEY:-}" ]] && break
@@ -27,7 +37,7 @@ while true; do
   [[ "$_parent" == "$_dir" ]] && break
   _dir="$_parent"
 done
-unset _dir _parent _envfile
+unset _dir _parent _envfile _var _line _value
 
 # Parse --admin flag
 ADMIN=false
@@ -49,14 +59,27 @@ if [[ "$ADMIN" == false ]]; then
     GET)
       ;; # always allowed
     POST|PUT|PATCH)
-      if [[ "$SCOPES" != *"write"* ]]; then
+      _has_write=false
+      IFS=',' read -ra _scope_tokens <<< "$SCOPES"
+      for _tok in "${_scope_tokens[@]}"; do
+        [[ "$(echo "$_tok" | xargs)" == "write" ]] && _has_write=true
+      done
+      if [[ "$_has_write" == false ]]; then
         echo "ERROR: $METHOD_UPPER requests require CLERK_BAPI_SCOPES=\"write\" or --admin flag." >&2
         echo "Current CLERK_BAPI_SCOPES: \"$SCOPES\"" >&2
         exit 1
       fi
       ;;
     DELETE)
-      if [[ "$SCOPES" != *"write"* ]] || [[ "$SCOPES" != *"delete"* ]]; then
+      _has_write=false
+      _has_delete=false
+      IFS=',' read -ra _scope_tokens <<< "$SCOPES"
+      for _tok in "${_scope_tokens[@]}"; do
+        _tok_trimmed="$(echo "$_tok" | xargs)"
+        [[ "$_tok_trimmed" == "write" ]] && _has_write=true
+        [[ "$_tok_trimmed" == "delete" ]] && _has_delete=true
+      done
+      if [[ "$_has_write" == false ]] || [[ "$_has_delete" == false ]]; then
         echo "ERROR: DELETE requests require CLERK_BAPI_SCOPES=\"write,delete\" or --admin flag." >&2
         echo "Current CLERK_BAPI_SCOPES: \"$SCOPES\"" >&2
         exit 1
@@ -69,8 +92,18 @@ if [[ "$ADMIN" == false ]]; then
   esac
 fi
 
-# Base URL: use CLERK_REST_API_URL if set, otherwise default to production
-BASE_URL="${CLERK_REST_API_URL:-https://api.clerk.com}"
+# Base URL: default to production. A custom CLERK_REST_API_URL is only honored
+# when the caller opts in via CLERK_ALLOW_CUSTOM_API_URL=1, so a stray or
+# malicious env value can't silently redirect requests (and the secret key)
+# to an untrusted host.
+BASE_URL="https://api.clerk.com"
+if [[ -n "${CLERK_REST_API_URL:-}" ]]; then
+  if [[ "${CLERK_ALLOW_CUSTOM_API_URL:-}" == "1" ]]; then
+    BASE_URL="$CLERK_REST_API_URL"
+  else
+    echo "WARNING: CLERK_REST_API_URL is set but ignored (set CLERK_ALLOW_CUSTOM_API_URL=1 to use a custom host). Using $BASE_URL." >&2
+  fi
+fi
 
 # Build curl command
 CURL_ARGS=(

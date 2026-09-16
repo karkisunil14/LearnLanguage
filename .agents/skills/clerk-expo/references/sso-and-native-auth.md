@@ -92,7 +92,7 @@ if (Platform.OS !== 'ios' && Platform.OS !== 'android') return null
 
 Always wrap in try/catch and swallow the cancellation codes. On unsupported platforms (web), fall back to `useSSO({ strategy: 'oauth_google' })` or hide the button.
 
-**Next-major note**: native Google sign-in moves to a separate `@clerk/expo-google-signin` package (plus its own config plugin) in the next major version. On v3 the `@clerk/expo/google` import is correct and logs a dev-only migration warning — don't preinstall the new package.
+**Version note**: on v3, native Google sign-in ships inside `@clerk/expo` itself and the `@clerk/expo/google` import works standalone. On v4 (this repo has `@clerk/expo@4.6.6`), that migration has already happened: `@clerk/expo-google-signin` is now an optional peer dependency, and `useSignInWithGoogle` from `@clerk/expo/google` requires it to be installed (`npx expo install @clerk/expo-google-signin`) — the import path itself is unchanged, but the package won't function without the peer installed. Check `node_modules/@clerk/expo/package.json` `peerDependenciesMeta` for the installed major before assuming either behavior.
 
 ## Native Apple sign-in — `useSignInWithApple()`
 

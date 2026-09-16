@@ -92,7 +92,7 @@ When you run a command without `--app`/`--instance`:
 
 1. The CLI resolves the current repo's profile (normalized git remote → git common dir → current working directory).
 2. If linked, it uses the stored app ID and instance IDs.
-3. If not linked, it errors with guidance to run `clerk link`.
+3. If not linked, it errors with guidance to run `clerk link` — but only for commands that actually require a linked profile (`apps`, `impersonate`, `link` itself, `enable billing`, `config schema/put`). Accountless-capable commands (`api`, `users`, `config pull/patch`, `enable/disable orgs`, `doctor`, `open`, `whoami`) don't need this step at all when a local `sk_` key is available — see [Accountless: operating without an account](#accountless-operating-without-an-account) above.
 
 ## `--app` and `--instance` targeting
 

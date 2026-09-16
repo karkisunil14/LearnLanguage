@@ -99,7 +99,7 @@ Appearance customization applies to both Core 2 and the current SDK.
 
 ### Themes
 
-Install themes from `@clerk/ui`:
+Themes come from `@clerk/ui`. Ask the developer for approval before installing it if it's not already a dependency:
 
 ```bash
 npm install @clerk/ui

@@ -26,11 +26,13 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRequestPending, setIsRequestPending] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const handleSignIn = async () => {
     setFormError(null);
     setIsSubmitting(true);
+    setIsRequestPending(true);
 
     try {
       const { error } = await withSessionRecovery(
@@ -39,6 +41,7 @@ export default function SignIn() {
             signIn.password({ emailAddress: email, password }),
             REQUEST_TIMEOUT_MS,
             TIMEOUT_MESSAGE,
+            () => setIsRequestPending(false),
           ),
         signOut,
       );
@@ -126,7 +129,7 @@ export default function SignIn() {
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={handleSignIn}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isRequestPending}
             className="mt-6 items-center justify-center rounded-full bg-brand-deep-purple py-4 shadow-lg"
           >
             <Text className="font-poppins-semibold text-body-lg text-white">

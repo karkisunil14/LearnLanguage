@@ -88,14 +88,14 @@ The published npm package is **`clerk`**, not `@clerk/cli`. Never teach `npm ins
 
 ## Prerequisites (run at session start)
 
-Before running any other Clerk command in a session, verify the CLI is authenticated, linked, and healthy:
+Before running any command that depends on an authenticated, linked project, verify the CLI is authenticated, linked, and healthy:
 
 ```sh
 clerk --version               # confirm the binary is on PATH
 clerk doctor --json           # structured health check; exit 1 if anything failed
 ```
 
-**Always run `clerk doctor --json` first.** It catches the common setup failures (not logged in, project not linked, missing keys, stale CLI version) up front, so later commands don't fail with confusing errors. In agent mode it also includes a `Host execution` check that warns when Clerk's host-side config / credential directories are not writable, which is the canonical signal that the current invocation is likely sandboxed.
+**Run `clerk doctor --json` first for anything other than accountless bootstrap.** It catches the common setup failures (not logged in, project not linked, missing keys, stale CLI version) up front, so later commands don't fail with confusing errors. Skip it (or treat a failing "not logged in" / "not linked" check as informational only) before accountless-capable commands like `clerk init` on a fresh project — see [Accountless setup](#accountless-setup) — since those are designed to run with no account and no link at all. In agent mode `doctor` also includes a `Host execution` check that warns when Clerk's host-side config / credential directories are not writable, which is the canonical signal that the current invocation is likely sandboxed.
 
 Each result has `name`, `status` (`pass`/`warn`/`fail`), `message`, optional `detail`, optional `remedy` (how to fix it), and optional `fix` (label for auto-fixable issues). Parse that and act on it, or surface it to the user. If `Host execution` warns, rerun the command on the host before trusting any auth/link/env/API failures from the same sandboxed run. Rerun `clerk doctor --json` whenever a later command starts misbehaving.
 
@@ -271,7 +271,7 @@ Full matrix and sandbox details in [references/agent-mode.md](references/agent-m
 
 - **JSON output:** `--json` on `apps list` and `doctor`. For `clerk api`, the response body is the raw API JSON, so pipe into `jq` freely.
 - **Exit codes:** `0` success, `1` runtime error, `2` usage/validation error. `doctor` returns `1` if any check failed.
-- **Error format:** User-facing errors print a single line to stderr and set a non-zero exit code. Use `--verbose` for stack traces when debugging.
+- **Error format:** In human mode, a single line prints to stderr with a non-zero exit code; use `--verbose` for stack traces when debugging. In agent mode, errors are a structured JSON envelope on stderr instead: `{"error":{"code","message","docsUrl?","errors?"}}` — see [references/agent-mode.md](references/agent-mode.md#error-output-format) for the full shape.
 
 ## Safety rules for autonomous use
 

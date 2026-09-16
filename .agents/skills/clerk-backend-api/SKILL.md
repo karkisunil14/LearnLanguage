@@ -14,9 +14,9 @@ User Prompt: $ARGUMENTS
 
 Before ANY POST / PATCH / PUT / DELETE, you MUST do ALL of the following in your response:
 
-1. **Check CLERK_SECRET_KEY** — verify it is set:
+1. **Check CLERK_SECRET_KEY** — verify it is set, without printing any part of its value:
    ```bash
-   echo $CLERK_SECRET_KEY | head -c 10
+   [ -n "$CLERK_SECRET_KEY" ] && echo "CLERK_SECRET_KEY is set" || echo "CLERK_SECRET_KEY is NOT set"
    ```
    If empty, stop and ask the user. Do not proceed without a valid key.
 
@@ -34,7 +34,7 @@ Before ANY POST / PATCH / PUT / DELETE, you MUST do ALL of the following in your
 
 ## FAST PATH: Common operations (use directly, no spec fetching needed)
 
-For the operations below, skip spec fetching and execute immediately using these exact templates. Substitute `$CLERK_SECRET_KEY`, `$USER_ID`, `$ORG_ID`, `$EMAIL` as needed from the user's context.
+For the operations below, skip spec fetching and use these exact templates. Substitute `$CLERK_SECRET_KEY`, `$USER_ID`, `$ORG_ID`, `$EMAIL` as needed from the user's context. "No spec fetching" only waives the endpoint-discovery step — it does not waive the CRITICAL mandatory checks above. GET requests can run immediately; every POST/PATCH/PUT/DELETE below still requires explicit user confirmation before execution.
 
 ### Create organization + invite member (two-step)
 
@@ -93,11 +93,19 @@ const invitation = await clerkClient.organizations.createOrganizationInvitation(
 
 **For `plan: 'pro'` and `onboarded: true` — use `public_metadata`** (frontend-readable, server-writable):
 
+`PATCH` **replaces** `public_metadata` wholesale, not merges (see [Metadata Overwrites](#metadata-overwrites-not-merges) below) — read the user's current metadata first and merge in the new fields so unrelated ones (e.g. `role`) survive:
+
 ```bash
+# Step 1 — read existing metadata
+EXISTING=$(curl -s "https://api.clerk.com/v1/users/${USER_ID}" \
+  -H "Authorization: Bearer $CLERK_SECRET_KEY" \
+  | python3 -c "import sys,json; print(json.dumps(json.load(sys.stdin).get('public_metadata') or {}))")
+
+# Step 2 — merge new fields into the existing metadata, then write it back
 curl -s -X PATCH "https://api.clerk.com/v1/users/${USER_ID}" \
   -H "Authorization: Bearer $CLERK_SECRET_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"public_metadata": {"plan": "pro", "onboarded": true}}' \
+  -d "{\"public_metadata\": $(python3 -c "import json; print(json.dumps({**json.loads('$EXISTING'), 'plan': 'pro', 'onboarded': True}))")}" \
   | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'Updated user {d[\"id\"]}: public_metadata={d.get(\"public_metadata\")}')"
 ```
 
@@ -127,7 +135,8 @@ data = json.load(sys.stdin)
 if isinstance(data, list):
     print(f'Found {len(data)} users:')
     for u in data:
-        print(f'  {u[\"id\"]}: {u.get(\"email_addresses\", [{}])[0].get(\"email_address\", \"no email\")}')
+        emails = u.get('email_addresses') or []
+        print(f'  {u[\"id\"]}: {emails[0].get(\"email_address\", \"no email\") if emails else \"no email\"}')
 else:
     print(json.dumps(data, indent=2))
 "
@@ -413,7 +422,8 @@ data = json.load(sys.stdin)
 if isinstance(data, list):
     print(f'Found {len(data)} users:')
     for u in data:
-        print(f'  {u[\"id\"]}: {u.get(\"email_addresses\", [{}])[0].get(\"email_address\", \"no email\")}')
+        emails = u.get('email_addresses') or []
+        print(f'  {u[\"id\"]}: {emails[0].get(\"email_address\", \"no email\") if emails else \"no email\"}')
 else:
     print(json.dumps(data, indent=2))
 "

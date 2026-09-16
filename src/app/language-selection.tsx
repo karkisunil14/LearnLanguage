@@ -7,17 +7,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import LanguageCard from "@/components/LanguageCard";
 import { images } from "@/constants/images";
 import { LANGUAGES } from "@/data/languages";
+import { useLanguageStore } from "@/store/languageStore";
 import type { LanguageCode } from "@/types/learning";
 
 export default function LanguageSelection() {
+  const storedLanguage = useLanguageStore((state) => state.selectedLanguage);
+  const setSelectedLanguage = useLanguageStore((state) => state.setSelectedLanguage);
   const [query, setQuery] = useState("");
-  const [selectedCode, setSelectedCode] = useState<LanguageCode>(LANGUAGES[0].code);
+  const [selectedCode, setSelectedCode] = useState<LanguageCode>(storedLanguage ?? LANGUAGES[0].code);
 
   const filteredLanguages = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     if (!normalizedQuery) return LANGUAGES;
-    return LANGUAGES.filter((language) =>
-      language.name.toLowerCase().includes(normalizedQuery),
+    return LANGUAGES.filter(
+      (language) =>
+        language.name.toLowerCase().includes(normalizedQuery) ||
+        language.nativeName.toLowerCase().includes(normalizedQuery),
     );
   }, [query]);
 
@@ -65,7 +70,10 @@ export default function LanguageSelection() {
 
         <TouchableOpacity
           activeOpacity={0.85}
-          onPress={() => router.back()}
+          onPress={() => {
+            setSelectedLanguage(selectedCode);
+            router.replace("/");
+          }}
           className="mt-2 items-center justify-center rounded-full bg-brand-deep-purple py-4 shadow-lg"
         >
           <Text className="font-poppins-semibold text-body-lg text-white">Confirm</Text>

@@ -33,10 +33,18 @@ clerk users list --email-address alice@example.com
 clerk users open user_abc123
 clerk users open user_abc123 --print     # print the URL instead of opening
 
-# Create a user (preferred; curated flags)
+# Create a user (preferred; curated flags) - preview first
 clerk users create \
   --email alice@example.com \
-  --password 'SuperSecret123!' \
+  --password "$USER_PASSWORD" \
+  --first-name Alice \
+  --last-name Doe \
+  --dry-run
+
+# Re-run without --dry-run once the preview looks right
+clerk users create \
+  --email alice@example.com \
+  --password "$USER_PASSWORD" \
   --first-name Alice \
   --last-name Doe \
   --yes
@@ -245,8 +253,8 @@ clerk env pull
 # Pull production keys
 clerk env pull --instance prod
 
-# Target a specific file
-clerk env pull --file .env
+# Target a specific file (must be gitignored - it will contain secret keys)
+clerk env pull --file .env.local
 ```
 
 `env pull` merges into the existing file: existing Clerk keys are updated in place; new ones are appended under a `# Clerk` header; everything else is preserved.

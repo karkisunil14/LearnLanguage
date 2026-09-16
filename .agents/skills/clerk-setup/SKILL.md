@@ -158,7 +158,7 @@ Execute each step from the quickstart guide:
 
 > **Next.js:** Create `proxy.ts` (Next.js <=15: `middleware.ts`). See the `clerk-nextjs-patterns` skill for middleware strategies.
 
-> **shadcn/ui detected** (`components.json` exists): ALWAYS apply the shadcn theme. See `clerk-custom-ui` skill → shadcn Theme section.
+> **shadcn/ui detected** (`components.json` exists): apply the shadcn theme so Clerk components match. Check first whether `@clerk/ui` (or `@clerk/themes`) and the theme CSS import are already present — don't reinstall or re-add what's already there. If `@clerk/ui`/`@clerk/themes` is missing, ask the developer for approval before installing it. See `clerk-custom-ui` skill → shadcn Theme section.
 
 ### 4. Get API Keys
 
@@ -300,10 +300,10 @@ Also import the shadcn CSS in your global styles:
 |-------|----------|
 | Missing `await` on `auth()` | In Next.js 15+, `auth()` is async: `const { userId } = await auth()` |
 | Exposing `CLERK_SECRET_KEY` | Never use the secret key in client code; only `NEXT_PUBLIC_*` keys are safe |
-| Missing middleware matcher | Include API routes: `matcher: ['/((?!.*\\..*|_next).*)', '/']` |
+| Missing middleware matcher | Include API routes: `matcher: ['/((?!.*\\..*\|_next).*)', '/']` |
 | ClerkProvider placement | Must be inside `<body>` in root layout (Core 2: could wrap `<html>`) |
 | Auth routes not public | Allow `/sign-in`, `/sign-up` in middleware config |
-| Landing page requires auth | To keep "/" public, exclude it: `matcher: ['/((?!.*\\..*|_next|^/$).*)', '/api/(.*)']` |
+| Landing page requires auth | To keep "/" public, exclude it: `matcher: ['/((?!.*\\..*\|_next\|^/$).*)', '/api/(.*)']` |
 | Wrong import path | Server code uses `@clerk/nextjs/server`, client uses `@clerk/nextjs` |
 | Wrong package name | Use `@clerk/react` not `@clerk/clerk-react` (Core 2 naming) |
 

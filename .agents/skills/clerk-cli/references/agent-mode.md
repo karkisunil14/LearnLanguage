@@ -74,7 +74,7 @@ Force human mode with `--mode human` or `CLERK_MODE=human`. Typical AI-agent inv
 In addition, sandboxed agent-mode invocations may emit the warning above once
 per CLI invocation when a host-sensitive operation is blocked.
 
-**Rule of thumb:** always pass `--yes` for mutations and `--json` for structured output where available. Pass `--app` / `--instance` when you intentionally target a real app. Bootstrapping without authentication needs no flag at all — temporary development keys are the default; `--accountless` forces that path over both a signed-in session and an existing linked profile. `--keyless` is a deprecated compatibility alias and should not be used in new instructions.
+**Rule of thumb:** `--dry-run` is the real safety net for mutations, since agent mode silently skips confirmation prompts regardless of `--yes` — always preview with `--dry-run` first. `--yes` is required only for `unlink` (the one command that still gates on it in agent mode); elsewhere it's accepted but has no effect, so don't rely on it as a safety signal. Pass `--json` for structured output where available, and `--app` / `--instance` when you intentionally target a real app. Bootstrapping without authentication needs no flag at all — temporary development keys are the default; `--accountless` forces that path over both a signed-in session and an existing linked profile. `--keyless` is a deprecated compatibility alias and should not be used in new instructions.
 
 ## Passing options as JSON: `--input-json`
 

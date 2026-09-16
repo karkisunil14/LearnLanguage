@@ -16,11 +16,11 @@ Import from `@clerk/expo/native`:
 
 | Component | Renders | Props |
 |-----------|---------|-------|
-| `AuthView` | Sign-in/sign-up UI, inline (fills parent) | `mode?: 'signInOrUp' \| 'signIn' \| 'signUp'` (default `signInOrUp`), `isDismissible?: boolean` (default true), `onDismiss?: () => void` |
+| `AuthView` | Sign-in/sign-up UI, inline (fills parent) | `mode?: 'signInOrUp' \| 'signIn' \| 'signUp'` (default `signInOrUp`), `isDismissible?: boolean` (default true), `onDismiss?: () => void`, `logo?: ReactElement`, `logoMaxHeight?: number` (default 44), `onHostBack?: () => void` |
 | `UserButton` | Avatar button that opens the native user profile | — |
 | `UserProfileView` | Profile/account management, inline | `isDismissible?`, `onDismiss?`, `style?` |
 
-These are the only public props. Do not invent event handlers (`onAuthEvent`, `onSignIn`, etc.) — react to auth state with `useAuth()` / `useUser()` instead. Verify props against `node_modules/@clerk/expo/dist/native/*.d.ts` for the installed version.
+This list is not necessarily exhaustive across every installed version. Do not invent event handlers (`onAuthEvent`, `onSignIn`, etc.) — react to auth state with `useAuth()` / `useUser()` instead. Verify props against `node_modules/@clerk/expo/dist/native/*.d.ts` for the installed version.
 
 ## Canonical screen
 

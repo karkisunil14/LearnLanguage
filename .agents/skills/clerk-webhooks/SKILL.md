@@ -47,6 +47,8 @@ export default clerkMiddleware(async (auth, req) => {
 
 ## Complete Webhook Handler (Next.js App Router)
 
+> Svix retries failed deliveries (see [Webhook Reliability](#webhook-reliability) below), so a handler can receive the same event more than once. The examples below are simplified for readability; in production, make each handler retry-safe — dedupe on the `svix-id` header, use Clerk-ID-based upserts instead of plain `create`, and route outbound notifications (email/Slack) through an idempotency check or outbox so a retried delivery doesn't re-send them.
+
 ```typescript
 // app/api/webhooks/route.ts
 import { verifyWebhook } from '@clerk/nextjs/webhooks'

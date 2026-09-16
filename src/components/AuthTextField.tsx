@@ -24,7 +24,12 @@ export function AuthTextField({ label, isPassword, ...inputProps }: AuthTextFiel
       </View>
 
       {isPassword && (
-        <TouchableOpacity onPress={() => setIsSecure((prev) => !prev)} hitSlop={8}>
+        <TouchableOpacity
+          onPress={() => setIsSecure((prev) => !prev)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={isSecure ? "Show password" : "Hide password"}
+        >
           <Ionicons name={isSecure ? "eye-outline" : "eye-off-outline"} size={22} color="#6B7280" />
         </TouchableOpacity>
       )}

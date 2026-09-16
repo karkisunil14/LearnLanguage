@@ -76,17 +76,30 @@ export async function withSessionRecovery<T>(
  * it will resolve, and that challenge has no built-in timeout - if it fails to load (blocked
  * network, slow connection), the sign-up call hangs forever with zero feedback. This gives up
  * after `ms` and surfaces a real error instead.
+ *
+ * Rejecting early doesn't cancel `promise` itself - the Clerk SDK exposes no cancellation for
+ * requests like `signIn.password()` / `signUp.password()`, so it keeps running in the background.
+ * Pass `onSettled` to find out when that original request actually finishes, so a caller can keep
+ * its submit button locked until then instead of letting the user fire a second request that
+ * races the first one against the same auth resource.
  */
-export function withTimeout<T>(promise: Promise<T>, ms: number, timeoutMessage: string): Promise<T> {
+export function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  timeoutMessage: string,
+  onSettled?: () => void,
+): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(timeoutMessage)), ms);
     promise.then(
       (value) => {
         clearTimeout(timer);
+        onSettled?.();
         resolve(value);
       },
       (err) => {
         clearTimeout(timer);
+        onSettled?.();
         reject(err);
       },
     );
