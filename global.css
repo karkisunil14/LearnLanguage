@@ -33,9 +33,9 @@
   --color-chat-blue-bg: #e8f0fe;
   --color-chat-blue-text: #0d132b;
   --color-chat-purple-bg: #ece9fd;
-  --color-chat-purple-text: #6c4ef5;
+  --color-chat-purple-text: #5b3bf6;
   --color-chat-peach-bg: #fdece3;
-  --color-chat-peach-text: #e8543e;
+  --color-chat-peach-text: #b53a24;
 
   /* Font families - loaded via @expo-google-fonts/poppins, see src/app/_layout.tsx */
   --font-poppins-regular: "Poppins_400Regular";
