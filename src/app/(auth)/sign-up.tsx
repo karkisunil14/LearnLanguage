@@ -17,6 +17,7 @@ import { AuthTextField } from "@/components/AuthTextField";
 import { VerificationModal } from "@/components/VerificationModal";
 import { images } from "@/constants/images";
 import { getClerkErrorMessage, navigateAfterAuth, withSessionRecovery, withTimeout } from "@/lib/clerk";
+import { posthog } from "@/lib/posthog";
 
 const REQUEST_TIMEOUT_MS = 15000;
 const TIMEOUT_MESSAGE =
@@ -85,6 +86,7 @@ export default function SignUp() {
         // visible while the screen underneath unmounts can crash the native Modal.
         setIsVerifying(false);
         await signUp.finalize({ navigate: navigateAfterAuth });
+        posthog?.capture("auth_signup_completed");
         return null;
       }
 

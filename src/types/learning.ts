@@ -12,6 +12,8 @@ export interface Language {
   flag: string;
   /** Display label for the active learner count, e.g. "28.4M learners". */
   learners: string;
+  /** Native-language greeting used on the Home screen, e.g. "Hola". */
+  greeting: string;
 }
 
 export interface VocabularyWord {
@@ -58,6 +60,8 @@ export interface Lesson {
   unitId: string;
   title: string;
   description: string;
+  /** Thumbnail shown on the lesson's card in the Lessons screen. */
+  image: string;
   xpReward: number;
   goals: LessonGoal[];
   vocabulary: VocabularyWord[];
@@ -73,4 +77,6 @@ export interface Unit {
   description: string;
   order: number;
   lessonIds: string[];
+  /** Banner image shown at the top of the Lessons screen for this unit. */
+  heroImage: string;
 }

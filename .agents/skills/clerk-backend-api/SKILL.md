@@ -101,11 +101,14 @@ EXISTING=$(curl -s "https://api.clerk.com/v1/users/${USER_ID}" \
   -H "Authorization: Bearer $CLERK_SECRET_KEY" \
   | python3 -c "import sys,json; print(json.dumps(json.load(sys.stdin).get('public_metadata') or {}))")
 
-# Step 2 — merge new fields into the existing metadata, then write it back
+# Step 2 — merge new fields into the existing metadata (via stdin, not source interpolation)
+MERGED=$(echo "$EXISTING" | python3 -c "import sys, json; existing = json.load(sys.stdin); existing.update({'plan': 'pro', 'onboarded': True}); print(json.dumps(existing))")
+
+# Step 3 — write the merged metadata back
 curl -s -X PATCH "https://api.clerk.com/v1/users/${USER_ID}" \
   -H "Authorization: Bearer $CLERK_SECRET_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"public_metadata\": $(python3 -c "import json; print(json.dumps({**json.loads('$EXISTING'), 'plan': 'pro', 'onboarded': True}))")}" \
+  -d "{\"public_metadata\": ${MERGED}}" \
   | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'Updated user {d[\"id\"]}: public_metadata={d.get(\"public_metadata\")}')"
 ```
 

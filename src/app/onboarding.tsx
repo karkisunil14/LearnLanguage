@@ -3,6 +3,7 @@ import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { images } from "@/constants/images";
+import { posthog } from "@/lib/posthog";
 
 export default function Onboarding() {
   return (
@@ -52,7 +53,10 @@ export default function Onboarding() {
 
         <TouchableOpacity
           activeOpacity={0.85}
-          onPress={() => router.push("/sign-up")}
+          onPress={() => {
+            posthog?.capture("onboarding_signup_started");
+            router.push("/sign-up");
+          }}
           className="flex-row items-center justify-center gap-2 rounded-full bg-brand-deep-purple py-4 shadow-lg"
         >
           <Text className="font-poppins-semibold text-body-lg text-white">Get Started</Text>

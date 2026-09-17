@@ -24,6 +24,7 @@ while true; do
           _line=$(grep -E "^${_var}=" "$_envfile" | tail -n 1 || true)
           if [[ -n "$_line" ]]; then
             _value="${_line#*=}"
+            _value="${_value%$'\r'}"
             _value="${_value%\"}"; _value="${_value#\"}"
             _value="${_value%\'}"; _value="${_value#\'}"
             export "$_var=$_value"

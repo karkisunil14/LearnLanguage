@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AuthTextField } from "@/components/AuthTextField";
 import { images } from "@/constants/images";
 import { getClerkErrorMessage, navigateAfterAuth, withSessionRecovery, withTimeout } from "@/lib/clerk";
+import { posthog } from "@/lib/posthog";
 
 const REQUEST_TIMEOUT_MS = 15000;
 const TIMEOUT_MESSAGE = "That's taking too long. Check your connection and try again.";
@@ -52,6 +53,7 @@ export default function SignIn() {
 
       if (signIn.status === "complete") {
         await signIn.finalize({ navigate: navigateAfterAuth });
+        posthog?.capture("auth_signin_completed");
       } else {
         setFormError("Something went wrong. Please try again.");
       }

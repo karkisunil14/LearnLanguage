@@ -1,5 +1,7 @@
 import { router, type Href } from "expo-router";
 
+import { posthog } from "@/lib/posthog";
+
 type NavigateAfterAuthParams = {
   session?: { currentTask?: unknown } | null;
   decorateUrl: (url: string) => string;
@@ -9,11 +11,13 @@ type NavigateAfterAuthParams = {
  * Clerk's `ClerkAPIResponseError` carries the actual, user-facing reason(s) inside
  * `errors[]` (one per invalid field, e.g. "email taken" + "password too short" at
  * once) - the top-level `message`/`longMessage` is just a generic summary. This
- * joins the field-level messages so nothing useful gets dropped, and logs the raw
- * error for whoever is watching the Metro logs.
+ * joins the field-level messages so nothing useful gets dropped, and warns with the
+ * raw error for whoever is watching the Metro logs. `console.warn` (not `.error`) on
+ * purpose - these are expected user-input rejections (wrong password, taken email),
+ * not app bugs, so they shouldn't trip Metro's red error overlay.
  */
 export function getClerkErrorMessage(error: unknown, fallback: string) {
-  console.error("Clerk error:", JSON.stringify(error, null, 2));
+  console.warn("Clerk error:", JSON.stringify(error, null, 2));
 
   const clerkError = error as
     | { errors?: { longMessage?: string; message?: string }[]; longMessage?: string; message?: string }
@@ -59,12 +63,14 @@ export async function withSessionRecovery<T>(
     const result = await attempt();
     if (isSessionExistsError((result as { error?: unknown }).error)) {
       await signOut();
+      posthog?.reset();
       return attempt();
     }
     return result;
   } catch (err) {
     if (isSessionExistsError(err)) {
       await signOut();
+      posthog?.reset();
       return attempt();
     }
     throw err;

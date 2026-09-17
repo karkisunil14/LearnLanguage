@@ -7,6 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import LanguageCard from "@/components/LanguageCard";
 import { images } from "@/constants/images";
 import { LANGUAGES } from "@/data/languages";
+import { posthog } from "@/lib/posthog";
 import { useLanguageStore } from "@/store/languageStore";
 import type { LanguageCode } from "@/types/learning";
 
@@ -72,6 +73,7 @@ export default function LanguageSelection() {
           activeOpacity={0.85}
           onPress={() => {
             setSelectedLanguage(selectedCode);
+            posthog?.capture("learning_language_selected", { language_code: selectedCode });
             router.replace("/");
           }}
           className="mt-2 items-center justify-center rounded-full bg-brand-deep-purple py-4 shadow-lg"
